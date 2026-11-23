@@ -105,7 +105,7 @@ fun HomeScreen(db: CineDb, pid: Long, onPlay: (Channel) -> Unit, onReset: () -> 
                 val progress = q.continueWatching(pid).executeAsList()
                 val cont = progress.map { Channel(it.id, it.playlistId, it.name, it.streamUrl, it.tvgId, it.logo, it.groupTitle, it.contentType, it.userAgent, it.isFavorite) }
                 (if (cont.isNotEmpty() && section == 0) listOf("Continue Watching" to cont) else emptyList()) +
-                    types.flatMap { t -> q.groupsByType(pid, t).executeAsList().mapNotNull { it.groupTitle }.take(if (sections[section].second == null) 4 else 60)
+                    types.flatMap { t -> q.groupsByType(pid, t).executeAsList().filterNotNull().take(if (sections[section].second == null) 4 else 60)
                         .map { g -> g to q.channelsByGroup(pid, t, g, 40).executeAsList() } }
             }
         }
