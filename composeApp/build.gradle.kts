@@ -69,6 +69,7 @@ compose.desktop {
         nativeDistributions {
             targetFormats(TargetFormat.Exe, TargetFormat.Msi)
             packageName = "TsunamiTV"
+            includeAllModules = true
             packageVersion = "1.0.0"
             windows { menuGroup = "Tsunami TV"; shortcut = true; dirChooser = true; iconFile.set(project.file("icon.ico")) }
         }
