@@ -71,6 +71,7 @@ compose.desktop {
             targetFormats(TargetFormat.Exe, TargetFormat.Msi)
             packageName = "TsunamiTV"
             packageVersion = "1.0.0"
+            modules("java.sql")
             appResourcesRootDir.set(project.layout.projectDirectory.dir("appResources"))
             windows { menuGroup = "Tsunami TV"; shortcut = true; dirChooser = true; iconFile.set(project.file("icon.ico")) }
         }
