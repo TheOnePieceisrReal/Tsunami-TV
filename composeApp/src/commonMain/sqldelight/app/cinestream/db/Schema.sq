@@ -1,0 +1,93 @@
+CREATE TABLE Playlist (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    sourceType TEXT NOT NULL,
+    url TEXT NOT NULL,
+    username TEXT,
+    password TEXT,
+    epgUrl TEXT,
+    lastUpdated INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE Channel (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    playlistId INTEGER NOT NULL REFERENCES Playlist(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    streamUrl TEXT NOT NULL,
+    tvgId TEXT,
+    logo TEXT,
+    groupTitle TEXT,
+    contentType TEXT NOT NULL DEFAULT 'LIVE',
+    userAgent TEXT,
+    isFavorite INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX channel_playlist ON Channel(playlistId, contentType, groupTitle);
+CREATE INDEX channel_tvg ON Channel(tvgId);
+
+CREATE TABLE EpgProgram (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    channelTvgId TEXT NOT NULL,
+    title TEXT NOT NULL,
+    description TEXT,
+    startMs INTEGER NOT NULL,
+    endMs INTEGER NOT NULL
+);
+CREATE INDEX epg_lookup ON EpgProgram(channelTvgId, startMs);
+
+CREATE TABLE WatchProgress (
+    channelId INTEGER PRIMARY KEY REFERENCES Channel(id) ON DELETE CASCADE,
+    positionMs INTEGER NOT NULL,
+    durationMs INTEGER NOT NULL,
+    updatedAt INTEGER NOT NULL
+);
+
+insertPlaylist:
+INSERT INTO Playlist(name, sourceType, url, username, password, epgUrl) VALUES (?, ?, ?, ?, ?, ?);
+
+lastInsertId:
+SELECT last_insert_rowid();
+
+allPlaylists:
+SELECT * FROM Playlist ORDER BY name;
+
+touchPlaylist:
+UPDATE Playlist SET lastUpdated = ? WHERE id = ?;
+
+clearChannels:
+DELETE FROM Channel WHERE playlistId = ?;
+
+insertChannel:
+INSERT INTO Channel(playlistId, name, streamUrl, tvgId, logo, groupTitle, contentType, userAgent)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+
+channelsByType:
+SELECT * FROM Channel WHERE playlistId = ? AND contentType = ? ORDER BY groupTitle, name;
+
+groupsByType:
+SELECT DISTINCT groupTitle FROM Channel WHERE playlistId = ? AND contentType = ? ORDER BY groupTitle;
+
+channelsByGroup:
+SELECT * FROM Channel WHERE playlistId = ? AND contentType = ? AND groupTitle = ? ORDER BY name LIMIT ?;
+
+searchChannels:
+SELECT * FROM Channel WHERE playlistId = ? AND name LIKE '%' || ? || '%' LIMIT 100;
+
+insertProgram:
+INSERT INTO EpgProgram(channelTvgId, title, description, startMs, endMs) VALUES (?, ?, ?, ?, ?);
+
+programsInWindow:
+SELECT * FROM EpgProgram WHERE channelTvgId = ? AND endMs > ? AND startMs < ? ORDER BY startMs;
+
+purgeOldPrograms:
+DELETE FROM EpgProgram WHERE endMs < ?;
+
+upsertProgress:
+INSERT OR REPLACE INTO WatchProgress(channelId, positionMs, durationMs, updatedAt) VALUES (?, ?, ?, ?);
+
+continueWatching:
+SELECT c.*, w.positionMs, w.durationMs FROM WatchProgress w JOIN Channel c ON c.id = w.channelId
+WHERE c.playlistId = ? AND w.positionMs > 0 AND w.positionMs < w.durationMs * 0.95
+ORDER BY w.updatedAt DESC LIMIT 20;
+
+deletePlaylist:
+DELETE FROM Playlist WHERE id = ?;
