@@ -40,7 +40,8 @@ kotlin {
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-swing:1.9.0")
                 implementation("io.ktor:ktor-client-cio:3.0.0")
                 implementation("app.cash.sqldelight:sqlite-driver:2.0.2")
-                implementation("uk.co.caprica:vlcj:4.8.3")   // requires VLC 3.x installed (64-bit) on Windows
+                implementation("org.xerial:sqlite-jdbc:3.46.1.3")
+                implementation("uk.co.caprica:vlcj:4.8.3")
             }
         }
         commonTest.dependencies { implementation(kotlin("test")) }
@@ -70,6 +71,7 @@ compose.desktop {
             targetFormats(TargetFormat.Exe, TargetFormat.Msi)
             packageName = "TsunamiTV"
             packageVersion = "1.0.0"
+            appResourcesRootDir.set(project.layout.projectDirectory.dir("appResources"))
             windows { menuGroup = "Tsunami TV"; shortcut = true; dirChooser = true; iconFile.set(project.file("icon.ico")) }
         }
     }
