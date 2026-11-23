@@ -1,25 +1,50 @@
 name: Build
-on: { push: { branches: [main] }, workflow_dispatch: {} }
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
 jobs:
   windows-exe:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
-        with: { distribution: temurin, java-version: 17 }
+        with:
+          distribution: temurin
+          java-version: 17
+      - name: Bundle VLC (64-bit)
+        shell: pwsh
+        run: |
+          Invoke-WebRequest https://get.videolan.org/vlc/3.0.21/win64/vlc-3.0.21-win64.zip -OutFile vlc.zip
+          Expand-Archive vlc.zip -DestinationPath vlc-tmp
+          $dest = "composeApp/appResources/windows-x64/vlc"
+          New-Item -ItemType Directory -Force $dest | Out-Null
+          Copy-Item vlc-tmp/vlc-3.0.21/libvlc.dll, vlc-tmp/vlc-3.0.21/libvlccore.dll $dest
+          Copy-Item vlc-tmp/vlc-3.0.21/plugins "$dest/plugins" -Recurse
+          Get-ChildItem $dest | Select-Object Name
       - uses: gradle/actions/setup-gradle@v4
-        with: { gradle-version: 8.10.2 }
+        with:
+          gradle-version: 8.10.2
       - run: gradle :composeApp:packageExe :composeApp:createDistributable
       - uses: actions/upload-artifact@v4
-        with: { name: TsunamiTV-windows, path: composeApp/build/compose/binaries/main/** }
+        with:
+          name: TsunamiTV-windows
+          path: composeApp/build/compose/binaries/main/**
+
   android-apk:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
-        with: { distribution: temurin, java-version: 17 }
+        with:
+          distribution: temurin
+          java-version: 17
       - uses: gradle/actions/setup-gradle@v4
-        with: { gradle-version: 8.10.2 }
+        with:
+          gradle-version: 8.10.2
       - run: gradle :composeApp:assembleDebug
       - uses: actions/upload-artifact@v4
-        with: { name: TsunamiTV-apk, path: composeApp/build/outputs/apk/debug/*.apk }
+        with:
+          name: TsunamiTV-apk
+          path: composeApp/build/outputs/apk/debug/*.apk
